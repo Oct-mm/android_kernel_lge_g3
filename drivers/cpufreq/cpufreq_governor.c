@@ -19,6 +19,7 @@
 #include <linux/export.h>
 #include <linux/kernel_stat.h>
 #include <linux/slab.h>
+
 #include "cpufreq_governor.h"
 
 static struct attribute_group *get_sysfs_attr(struct dbs_data *dbs_data)
@@ -168,7 +169,7 @@ static inline void __gov_queue_work(int cpu, struct dbs_data *dbs_data,
 {
 	struct cpu_dbs_common_info *cdbs = dbs_data->cdata->get_cpu_cdbs(cpu);
 
-	queue_delayed_work_on(cpu, system_wq, &cdbs->work, delay);
+	mod_delayed_work_on(cpu, system_wq, &cdbs->work, delay);
 }
 
 void gov_queue_work(struct dbs_data *dbs_data, struct cpufreq_policy *policy,
@@ -298,7 +299,7 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 		rc = sysfs_create_group(get_governor_parent_kobj(policy),
 				get_sysfs_attr(dbs_data));
-		if (rc && rc != -EEXIST) {
+		if (rc) {
 			cdata->exit(dbs_data);
 			kfree(dbs_data);
 			return rc;
@@ -331,6 +332,9 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		return 0;
 	case CPUFREQ_GOV_POLICY_EXIT:
 		if (!--dbs_data->usage_count) {
+			sysfs_remove_group(get_governor_parent_kobj(policy),
+					get_sysfs_attr(dbs_data));
+
 			if (!have_governor_per_policy())
 				cpufreq_put_global_kobject();
 
@@ -399,7 +403,7 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 					kcpustat_cpu(j).cpustat[CPUTIME_NICE];
 
 			mutex_init(&j_cdbs->timer_mutex);
-			INIT_DELAYED_WORK_DEFERRABLE(&j_cdbs->work,
+			INIT_DEFERRABLE_WORK(&j_cdbs->work,
 					     dbs_data->cdata->gov_dbs_timer);
 		}
 
