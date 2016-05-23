@@ -153,6 +153,13 @@ struct cpu_dbs_common_info {
 	ktime_t time_stamp;
 };
 
+struct rm_cpu_dbs_info_s {
+	struct cpu_dbs_common_info cdbs;
+	unsigned int down_skip;
+	unsigned int requested_freq;
+	unsigned int enable:1;
+};
+
 struct od_cpu_dbs_info_s {
 	struct cpu_dbs_common_info cdbs;
 	struct cpufreq_frequency_table *freq_table;
@@ -214,12 +221,20 @@ struct ex_dbs_tuners {
 };
 
 /* Common Governor data across policies */
+struct rm_dbs_tuners {
+	unsigned int ignore_nice_load;
+	unsigned int sampling_rate;
+	unsigned int up_threshold;
+	unsigned int freq_step;
+};
+/* Common Governer data across policies */
 struct dbs_data;
 struct common_dbs_data {
 	/* Common across governors */
 	#define GOV_ONDEMAND		0
 	#define GOV_CONSERVATIVE	1
 	#define GOV_ELEMENTALX		2
+	#define GOV_RAGINGMOLASSES  1
 	int governor;
 	struct attribute_group *attr_group_gov_sys; /* one governor - system */
 	struct attribute_group *attr_group_gov_pol; /* one governor - policy */
@@ -264,6 +279,10 @@ struct cs_ops {
 	struct notifier_block *notifier_block;
 };
 
+struct rm_ops {
+	struct notifier_block *notifier_block;
+};
+
 static inline int delay_for_sampling_rate(unsigned int sampling_rate)
 {
 	int delay = usecs_to_jiffies(sampling_rate);
@@ -304,3 +323,4 @@ void od_register_powersave_bias_handler(unsigned int (*f)
 		unsigned int powersave_bias);
 void od_unregister_powersave_bias_handler(void);
 #endif /* _CPUFREQ_GOVERNOR_H */
+
