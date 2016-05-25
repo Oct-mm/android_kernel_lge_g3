@@ -45,7 +45,7 @@
 #define INIT_UDELAY		200
 #define MAX_UDELAY		2000
 
-#ifdef CONFIG_CPU_FREQ_GOV_SLIM
+#ifdef CONFIG_CPU_FREQ_GOV_KRAKEN
 int graphics_boost = 6;
 #endif
 
@@ -171,6 +171,10 @@ void kgsl_pwrctrl_pwrlevel_change(struct kgsl_device *device,
 	update_clk_statistics(device, true);
 
 	level = pwr->active_pwrlevel;
+
+#ifdef CONFIG_CPU_FREQ_GOV_KRAKEN
+        graphics_boost = pwr->active_pwrlevel;
+#endif
 
 	/*
 	 * Set the active powerlevel first in case the clocks are off - if we
