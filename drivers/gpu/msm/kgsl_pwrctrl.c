@@ -45,6 +45,10 @@
 #define INIT_UDELAY		200
 #define MAX_UDELAY		2000
 
+#ifdef CONFIG_CPU_FREQ_GOV_KRAKEN
+int graphics_boost = 6;
+#endif
+
 struct clk_pair {
 	const char *name;
 	uint map;
@@ -168,6 +172,10 @@ void kgsl_pwrctrl_pwrlevel_change(struct kgsl_device *device,
 
 	level = pwr->active_pwrlevel;
 
+#ifdef CONFIG_CPU_FREQ_GOV_KRAKEN
+        graphics_boost = pwr->active_pwrlevel;
+#endif
+
 	/*
 	 * Set the active powerlevel first in case the clocks are off - if we
 	 * don't do this then the pwrlevel change won't take effect when the
@@ -210,6 +218,9 @@ void kgsl_pwrctrl_pwrlevel_change(struct kgsl_device *device,
 
 
 	trace_kgsl_pwrlevel(device, pwr->active_pwrlevel, pwrlevel->gpu_freq);
+#ifdef CONFIG_CPU_FREQ_GOV_SLIM
+        graphics_boost = pwr->active_pwrlevel;
+#endif
 }
 
 EXPORT_SYMBOL(kgsl_pwrctrl_pwrlevel_change);
@@ -1155,8 +1166,6 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 					   gpu_freq) : 0;
 		pwr->pwrlevels[i].bus_freq =
 			pdata->pwrlevel[i].bus_freq;
-		pwr->pwrlevels[i].io_fraction =
-			pdata->pwrlevel[i].io_fraction;
 	}
 	/* Do not set_rate for targets in sync with AXI */
 	if (pwr->pwrlevels[0].gpu_freq > 0)
